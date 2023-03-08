@@ -1,0 +1,8 @@
+# parameter file
+baseline:10,10
+stimulus:0,10
+bin_width:0.5
+trial_percentile:99
+average_percentile:90
+inhibit_bin_threshold:3
+excite_bin_threshold:3
