@@ -30,8 +30,8 @@ if __name__ == '__main__':
     parser.add_argument('-ibt','--inhibit_bin_threshold',nargs=1,default=[3],type=int,help="Number of bins for inhibtion threshold.")
     parser.add_argument('-ebt','--excite_bin_threshold',nargs=1,default=[3],type=int,help="Number of bins for excitation threshold.")
     
-    #parser.add_argument('-mu','--mu',type=int,nargs=1,default=[250],help="Number of points for moving average in ISIF.")
-    #parser.add_argument('-sig','--sigma',type=float,nargs=1,default=[25/1000],help="Sigma (bandwidth) in SDF.")
+    parser.add_argument('-mu','--mu',type=int,nargs=1,default=[250],help="Number of points for moving average in ISIF. Not implemented.")
+    parser.add_argument('-sig','--sigma',type=float,nargs=1,default=[25/1000],help="Sigma (bandwidth) in SDF. Not implemented")
 
     parser.add_argument('-g','--generate_data',action="store_true",help="If given then will gather data in data_direc.")
     parser.add_argument('-ar','--average_response',action="store_true",help="If given then will gather average neural response in data_direc.")
@@ -87,22 +87,6 @@ if __name__ == '__main__':
             pool.close()
             pool.join()
             print(f"Finished analyzing {group}...\n")
-        
-
-        '''
-        cells = 0; # integer that counts the number of cells analyzed
-        all_cells = []; # array that will hold all the paths each neuron data
-        for tp in top_levels:
-            for nl in next_levels:
-                print(f"Started {tp} {nl}")
-                pool = multiprocessing.Pool(multiprocessing.cpu_count()-2)
-                neurons = pnd.get_trial_data_parallel(args.data_direc,tp,nl,save_direc)
-                parallel = [(neuron,args.bin_width[0],args.trial_percentile[0],args.average_percentile[0],args.baseline[0],args.baseline[1],args.stimulus[0],args.stimulus[1],args.post[0],args.post[1],args.inhibit_bin_threshold[0],args.excite_bin_threshold[0]) for neuron in neurons]
-                pool.starmap(pnd.analyze_trial_parallel,parallel)
-                pool.close()
-                pool.join()
-                print(f"Finished {tp} {nl}")
-        '''
 
     if args.average_response:
         for neural_set in pnd.grab_analyze_avg_neurons(save_direc):
@@ -113,14 +97,12 @@ if __name__ == '__main__':
 
     if args.pandas:
         neurons = []
-        for dir in os.listdir(save_direc):
-            if "comparisons" not in dir and ".DS_Store" not in dir and "parameters.txt" not in dir and "results.csv" not in dir:
-                for d in os.listdir(save_direc+"/"+dir):
-                    if "neuron" in d:
-                        neuralFile =open(save_direc+"/"+dir+"/"+d+"/neuron.obj","rb")
-                        neuron = pickle.load(neuralFile)
-                        neuralFile.close()
-                        #properties.determine_properties(neuron)
-                        neurons.append(vars(neuron))
+        for group in groups:
+            for neuron_dir in os.listdir(f"{save_direc}/{group}"):
+                if "Neuron" in neuron_dir:
+                    neuralFile =open(f"{save_direc}/{group}/{neuron_dir}/neuron.obj","rb")
+                    neuron = pickle.load(neuralFile)
+                    neuralFile.close()
+                    neurons.append(neuron.meta_data)
         df = pd.DataFrame(neurons)
-        df.to_csv(f"{save_direc}/comparisons/all_data.csv")
+        df.to_csv(f"{save_direc}/all_data.csv")

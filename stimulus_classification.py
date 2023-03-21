@@ -7,64 +7,40 @@
 # import python modules
 import numpy as np
 import sys, os, pickle
-from scipy.stats import norm, mannwhitneyu
-from scipy.interpolate import interp1d
-from scipy.interpolate import UnivariateSpline
 from scipy.stats import binom
 import sys
 
-
-
 from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
-import seaborn as sns
-from scipy.signal import savgol_filter
 
 # import user made modules
 from helpers import *
-#import process_neural_data as pnd
 
 def moving_mean(x,window=250):
     movmean = np.zeros(x.shape[0])
-    shift = 1 if (window%2) else 0
-    for i in range(window//2-shift,x.shape[0]-window//2):
-        movmean[i] = np.mean(x[i-(window//2-shift):i+(window//2)])
-    for i in range(0,window//2-shift):
-        left = x[0:i]
-        right = x[i:i+window//2]
-        movmean[i] = (np.sum(left)+np.sum(right)) / (left.shape[0]+right.shape[0])
+    for i in range(window//2,x.shape[0]-window//2):
+        movmean[i] = np.mean(x[i-(window//2):i+(window//2)+(window%2)])
+    for i in range(0,window//2):
+        movmean[i] = np.mean(x[0:i+window//2+(window%2)])
     for i in range(x.shape[0]-window//2,x.shape[0]):
-        left = x[i-window//2:i]
-        right = x[i:]
-        movmean[i] = (np.sum(left)+np.sum(right)) / (left.shape[0]+right.shape[0])
+        movmean[i] = np.mean(x[i-window//2:])
     return movmean
         
 
 
-def isi_function(spikes,t,avg=250,extend=True):
+def isi_function(spikes,t,avg=250):
     isis = np.diff(spikes)
     tEnd = t[-1] - spikes[-1]
-    '''
-    if isis[-1] <= tEnd:
-        isis = np.append(isis,tEnd)
-    else:
-        isis = np.append(isis,np.mean([isis[-1],tEnd]))
-    '''
-    #isif = np.convolve(np.interp(t,spikes[:-1],np.diff(spikes)),np.ones(avg)/avg,mode='same')
-    #isif = np.convolve(np.interp(t,spikes,isis),np.ones(avg)/avg,mode='same')
     interp = np.interp(t,spikes[:-1],np.diff(spikes))
     if isis[-1] <= tEnd:
         interp[t >= spikes[-1]] = tEnd
     else:
         interp[t >= spikes[-1]] = np.mean([tEnd,isis[-1]])
-    interp[t <= spikes[0]] = isis[0]
+    if isis[0] <= spikes[0]:
+        interp[t <= spikes[0]] = np.mean([spikes[0],isis[0]])
+    else:
+        interp[t <= spikes[0]] = spikes[0]
     isif = moving_mean(interp,window=avg)
-    #isif = np.convolve(interp,np.ones(avg)/avg,mode='same') 
-    '''
-    if extend and spikes[0] > t[1]:
-        first_spike = np.where(t < spikes[0])[0][-1] #if len(spikes) > 1 else np.where(t < spikes[0])[0][-1]
-        isif[0:first_spike+1] = np.ones(first_spike+1)*isif[first_spike]
-    '''
     return isif
 
 def gaussian(x,s):
@@ -146,20 +122,6 @@ def classify_response(res_inhibit,res_excite,in_bin_threshold,ex_bin_threshold,b
         type = "no effect"
 
     return res, type, class_results
-    '''
-    if np.sum(res_inhibit[:len(res_inhibit)//2]) >= in_bin_threshold and np.sum(res_inhibit[len(res_inhibit)//2:]) < np.sum(res_inhibit[:len(res_inhibit)//2]) and np.sum(res_excite) < ex_bin_threshold:
-        return res, "adapting inhibition",class_results
-    elif np.sum(res_inhibit) >= in_bin_threshold and np.sum(res_excite) < ex_bin_threshold:
-        return res, "partial inhibition",class_results
-    elif np.sum(res_inhibit) < in_bin_threshold and np.sum(res_excite) >= ex_bin_threshold:
-        return res, "excitation",class_results
-    elif np.sum(res_inhibit) >= in_bin_threshold and np.sum(res_excite) >= ex_bin_threshold and np.where(res_excite == 1)[0][-1] >= np.where(res_inhibit == 1)[0][-1]:
-        return res, "biphasic IE",class_results
-    elif np.sum(res_inhibit) >= in_bin_threshold and np.sum(res_excite) >= ex_bin_threshold and np.where(res_inhibit == 1)[0][-1] >= np.where(res_excite == 1)[0][-1]:
-        return res, "biphasic EI",class_results
-    else:
-        return res, "no effect",class_results # Return the number of bins no effect, inhbited, and excited, the classification, and the corresponding bin class integers
-    '''
 
 def avg_classify_response(neuron,res_inhibit,res_excite,in_bin_threshold,ex_bin_threshold,bin_edges):
 
@@ -175,7 +137,6 @@ def avg_classify_response(neuron,res_inhibit,res_excite,in_bin_threshold,ex_bin_
             class_results.append(val) # Append val as 0 to class_results for no effect bin
 
     li_true, li_bins = local_inhibition_check(neuron)
-    #print(li_bins)
     consec_in = np.asarray([[i+1,i+2] for i in range(len(res_inhibit)-1) if sum(res_inhibit[i:i+2]) == 2])
     consec_ex = np.asarray([[i+1,i+2] for i in range(len(res_excite)-1) if sum(res_excite[i:i+2]) == 2])
 
@@ -238,27 +199,7 @@ def avg_classify_response(neuron,res_inhibit,res_excite,in_bin_threshold,ex_bin_
             type = "adapting inhibition"
         else:
             type = "partial inhibition"
-
-
     return res, type, class_results
-
-
-
-
-    '''
-    if np.sum(res_inhibit[:len(res_inhibit)//2]) >= in_bin_threshold and np.sum(res_inhibit[len(res_inhibit)//2:]) < np.sum(res_inhibit[:len(res_inhibit)//2]) and np.sum(res_excite) < ex_bin_threshold:
-        return res, "adapting inhibition",class_results
-    elif np.sum(res_inhibit) >= in_bin_threshold and np.sum(res_excite) < ex_bin_threshold:
-        return res, "partial inhibition",class_results
-    elif np.sum(res_inhibit) < in_bin_threshold and np.sum(res_excite) >= ex_bin_threshold:
-        return res, "excitation",class_results
-    elif np.sum(res_inhibit) >= in_bin_threshold and np.sum(res_excite) >= ex_bin_threshold and np.where(res_excite == 1)[0][-1] >= np.where(res_inhibit == 1)[0][-1]:
-        return res, "biphasic IE",class_results
-    elif np.sum(res_inhibit) >= in_bin_threshold and np.sum(res_excite) >= ex_bin_threshold and np.where(res_inhibit == 1)[0][-1] >= np.where(res_excite == 1)[0][-1]:
-        return res, "biphasic EI",class_results
-    else:
-        return res, "no effect",class_results # Return the number of bins no effect, inhbited, and excited, the classification, and the corresponding bin class integers
-    '''
 
 def local_inhibition_check(neuron):
     in_bin_threshold = 2;
@@ -287,10 +228,7 @@ def local_inhibition_check(neuron):
                 success += 1
     pmf_vals = np.asarray([binom.pmf(k,neuron.trials,success/total_poss) for k in range(neuron.trials+1)])
 
-    #print(np.where(pmf_vals < 0.05))
-
     max_pmf = np.where(pmf_vals == pmf_vals.max())[0][0]
-    #print(max_pmf)
     bl_trial_prob = np.where(pmf_vals[max_pmf:] < 0.05)[0][0]+max_pmf
 
     trial_bins = int(neuron.trial_length/neuron.bin_width)
@@ -307,23 +245,7 @@ def local_inhibition_check(neuron):
             file2.close()
             if b1+b2 == 0:
                 success_trials[bs] += 1
-
-    '''
-    print(bl_trial_prob)
-    print(success_trials)
-    print(success_trials.max())
-    print(success,total_poss, success/total_poss,trial_success)
-    print(pmf_vals)
-    '''
-
-
     if np.max([bl_trial_prob,4]) < success_trials.max():
-        '''
-        plt.plot(range(neuron.trials+1),pmf_vals,marker="o")
-        plt.hlines(0.05,0,neuron.trials,color="k",linestyle="dashed")
-        plt.xlabel("Trials"); plt.ylabel("PMF");
-        plt.show()
-        '''
         return True, bin_sets[np.where(success_trials == success_trials.max())[0][0]]
     return False, -1
 
@@ -388,26 +310,11 @@ def average_sdf_isi_functions_classification(neuron,bin_width=0.5,percentile=90,
     if (np.mean([len(stimulus.spikes) for stimulus in stimuli]) <= 5):
         return np.array([0,len(stimuli[0].bin_edges)-1,0]),"complete inhibition", np.ones(len(stimuli[0].bin_edges)-1)
 
-
-    '''
-    if (np.mean([stimulus.freq for stimulus in stimuli]) <= 0.5) and (np.mean([baseline.freq for baseline in baselines]) <= 0.5):
-        return np.array([len(stimuli[0].bin_edges)-1,0,0]),"no effect", np.zeros(len(stimuli[0].bin_edges)-1)
-    if (np.mean([stimulus.freq for stimulus in stimuli]) <= 0.5):
-        return np.array([0,len(stimuli[0].bin_edges)-1,0]),"complete inhibition", np.ones(len(stimuli[0].bin_edges)-1)
-    '''
-
     res_excite = avg_excitation_check(neuron,baselines,stimuli,percentile=percentile,bin_width=bin_width)
     res_inhibit = avg_inhibition_check(neuron,baselines,stimuli,percentile=percentile,bin_width=bin_width)
     np.savetxt(neuron.cell_dir+"/avg_results_excitation.txt",res_excite,delimiter="\t",newline="\n",fmt="%f",header="Average Stimulus bin results for excitation check. 1 means bin excited.") # Save the results of excitation check
     np.savetxt(neuron.cell_dir+"/avg_results_inhibition.txt",res_inhibit,delimiter="\t",newline="\n",fmt="%f",header="Average Stimulus bin results for inhibition check. 1 means bin inhibited.") # Save the results of inhibition check
     res, type, class_results = avg_classify_response(neuron, res_inhibit,res_excite,in_bin_threshold,ex_bin_threshold,stimuli[0].bin_edges)
-    '''
-    res, type, class_results = classify_response(res_inhibit,res_excite,in_bin_threshold,ex_bin_threshold,stimuli[0].bin_edges)
-    if type != "partial inhibition" and type != "adapting inhibition" and type != "biphasic IE" and type != "biphasic EI":
-        if local_inhibition_check(neuron,in_bin_threshold=in_bin_threshold):
-            type = "local inhibition"
-    '''
-    #return  classify_response(res_inhibit,res_excite,in_bin_threshold,ex_bin_threshold,stimuli[0].bin_edges)
     return res, type, class_results
 
 def avg_inhibition_check(neuron,baselines,stimuli,percentile=95,bin_width=0.5):
@@ -417,7 +324,6 @@ def avg_inhibition_check(neuron,baselines,stimuli,percentile=95,bin_width=0.5):
     isi_bls = np.asarray([baseline.isif for baseline in baselines if baseline.spikes.size > 1])
     isi_stims = np.asarray([stimulus.isif for stimulus in stimuli if stimulus.spikes.size > 1])
     avg_isi_stim = np.mean(isi_stims,axis=0)
-    avg_isi_bl = np.mean(isi_bls,axis=0)
 
     bl_areas = []
     for isi_bl in isi_bls:

@@ -16,7 +16,6 @@ from spike_train import spike_train as st
 
 # Class to describe neuron for further analysis
 class neural_cell:
-    #def __init__(self,cell_num,mouse_type,delivery,src):
     def __init__(self,data_direc,group,src):
         '''
         Initialize neuron object for further analysis of spike trains. Arguments:
@@ -30,19 +29,6 @@ class neural_cell:
         self.cell_num = int(src.split("_")[1]) # Store cell number as neural_cell attribute
         self.src = f"{self.data_direc}/{src}" # Store src directory as neural_cell attribute
 
-    '''
-    def set_recording_attributes(self):
-        str_to_parse = self.src.split("/")[-3:]
-        first_split = str_to_parse[0].split("_")
-        self.ag_number = first_split[0]
-        self.mouse_number = first_split[1][first_split[1].index("#")+1:] if first_split[1][first_split[1].index("#")+1:][0] != 'N' else first_split[1][first_split[1].index("#")+1:]
-        self.date = datetime.datetime.strptime(first_split[-1],'%m%d%y').strftime('%d-%b-%y')
-        second_split = str_to_parse[1].split("_")
-        self.trajectory = second_split[0][second_split[0].index("y")+1:]
-        self.laser_strength = second_split[-7]
-        self.laser_duration = second_split[-6][0:2]
-        self.channel = str_to_parse[-1][:str_to_parse[-1].index(".")+1]
-    '''
 
     def set_save_direc(self,save_direc):
         '''
@@ -56,22 +42,6 @@ class neural_cell:
         Function that looks at src directory and parses spike train data. Finds when the light is cut on, and what
         spikes correspond to each trial.
         '''
-        '''
-        with open(self.src) as f: # Open the src file
-            lines = f.readlines() # Read in all the lines in the src file
-            blanks = [line for line in range(len(lines)) if lines[line] == "\n"] # Find where all the blank lines are
-            spikes = np.asarray([eval(spike) for spike in lines[blanks[0]+1:blanks[1]]]) # Gather all the spike data, data until second empty line
-            light_on = None
-            if blanks[2]-blanks[1] == 2: # Gather the light on data, data between second and third empty line, case if multiple empty lines in a row
-                light_on = np.asarray([eval(light) for light in lines[blanks[2]+1:blanks[3]]]) # Store times that stimulation begain into light_on
-            else: # Gather the light on data, data between second and third empty line
-                light_on = np.asarray([eval(light) for light in lines[blanks[3]+1:blanks[4]]]) # Store times that stimulation begain into light_on
-        self.trials = len(light_on) # Set the number of trials as the number of times the light was cut on
-        self.spikes = spikes # Save the spike data
-        self.light_on = light_on # Save the light on data
-        '''
-
-        
         self.spikes = np.loadtxt(f"{self.src}/spikes.txt") # Save the spike data
         self.light_on = np.loadtxt(f"{self.src}/light_on.txt") # Save the spike data # Save the light on data
         self.trials = self.light_on.shape[0] # Set the number of trials as the number of times the light was cut on
@@ -93,20 +63,29 @@ class neural_cell:
         '''
         Saves self and all characteristics in save_direc.
         '''
+        self.meta_data = {}
+        self.read_in_meta_data()
         self.save_meta_data()
         filehandler = open(f"{self.cell_dir}/neuron.obj","wb")
         pickle.dump(self,filehandler)
         filehandler.close()
 
+    def read_in_meta_data(self):
+        for line in open(f"{self.data_direc}/Neuron_{self.cell_num:04d}/meta_data.txt").readlines()[1:]:
+            splits = line.split(":")
+            self.meta_data[splits[0]] = eval(splits[1]) if splits[0] == 'cell_num' or splits[0] =='distance' else splits[1][1:-1]
+
     def save_meta_data(self):
         '''
         Function that grabs all meta data and save it to a text file in cell_dir.
         '''
+        for key in self.__dict__:
+            if key != "spikes" and key != "light_on" and key != "meta_data":
+                self.meta_data[key] = self.__dict__[key]
         with open(f"{self.cell_dir}/meta_data.txt","w") as f: # Open file meta_data.txt in cell_dir.
-            f.write("# Meta Data for neuron\n")
-            for key in sorted(self.__dict__):
-                if key != "spikes" and key != "light_on":
-                    f.write(f"{key}:\t{self.__dict__[key]}\n") # Write the cell number
+            f.write("# Meta Data for Neuron\n")
+            for key in sorted(self.meta_data):
+                    f.write(f"{key}:\t{self.meta_data[key]}\n") # Write the cell number
 
     def plot_trial(self,trial,trial_direc,baseline_data,stim_data,bin_results,classification):
         '''
@@ -119,7 +98,7 @@ class neural_cell:
             arr class_results -> array detailing how each bin was classified
             str class10s -> str of the classification for the current trial
         '''
-        fig, axes = plt.subplots(2,1,figsize=(8,6),dpi=300)
+        _, axes = plt.subplots(2,1,figsize=(8,6),dpi=300)
         ax = [axes[0],axes[1]]
         ax[0].plot((np.arange(1,len(baseline_data.bins)+1,1)-len(baseline_data.bins))*baseline_data.bin_width,[b.freq for b in baseline_data.bins],marker='o',color="k")
         ax[0].plot(np.arange(1,len(stim_data.bins)+1,1)*stim_data.bin_width,[b.freq for b in stim_data.bins],marker='o',color="blue")
@@ -132,7 +111,7 @@ class neural_cell:
         plt.savefig(f"{trial_direc}/freq_cv.pdf")
         plt.close()
 
-        fig, ax = plt.subplots(1,1,figsize=(12,4),dpi=300) # Create the figure
+        _, ax = plt.subplots(1,1,figsize=(12,4),dpi=300) # Create the figure
         ax.scatter(baseline_data.spikes-baseline_data.time,np.ones(len(baseline_data.spikes)),marker="|",color="k",label="Baseline") # Plot all the baseline data (blue)
         ax.scatter(stim_data.spikes,np.ones(len(stim_data.spikes)),marker="|",color="blue",label="Light On") # Plot all the stimulus spike data (orange)
         cmap = ["gray","cyan","red","green"] # Color map to code for classification of bin
@@ -164,7 +143,6 @@ class neural_cell:
 
 
         for baseline in baselines:
-            freq = np.zeros(()); cv = []
             for bi in range(len(baseline.bins)):
                 avg_bl[bi,0] += baseline.bins[bi].freq/len(baselines)
                 avg_bl[bi,1] += baseline.bins[bi].cv/len(baselines)
@@ -240,13 +218,12 @@ class neural_cell:
                 spike_trains[key].set_name(f"{key}_spike_train")
                 spike_trains[key].set_save_direc(f"{trial_direc}/{key}_data")
                 spike_trains[key].get_bins()
-                #spike_trains[key].get_bursts()
                 spike_trains[key].save_data()
 
             baseline_stats[tl-1] = np.asarray([baseline_data.freq,baseline_data.cv, baseline_data.avg_isi,baseline_data.first_spike,baseline_data.last_spike]) 
             stim_stats[tl-1] = np.asarray([stim_data.freq,stim_data.cv, stim_data.avg_isi,stim_data.first_spike,stim_data.last_spike]) 
 
-            bin_type_breakdown,classification, bin_classes = stimclass.trial_sdf_isi_functions_classification(baseline_data, stim_data,trial_direc,bin_width=self.bin_width,percentile=self.trial_percentile,in_bin_threshold=self.in_bin_threshold,ex_bin_threshold=self.ex_bin_threshold)
+            _,classification, bin_classes = stimclass.trial_sdf_isi_functions_classification(baseline_data, stim_data,trial_direc,bin_width=self.bin_width,percentile=self.trial_percentile,in_bin_threshold=self.in_bin_threshold,ex_bin_threshold=self.ex_bin_threshold)
             self.classifications.append(classification)
             np.savetxt(trial_direc+"/bin_results.txt",np.asarray(bin_classes),delimiter="\t",newline="\n",fmt="%d",header="Class result for each bin.") # Save the classification of each bin as a file
             self.plot_trial(tl,trial_direc,baseline_data,stim_data,bin_classes,classification) # Call plot trial to visualize the classification by bin
@@ -292,7 +269,7 @@ class neural_cell:
 
 
     def classify_neuron(self):
-        bin_type_breakdown,classification, bin_classes = stimclass.average_sdf_isi_functions_classification(self,bin_width=self.bin_width,percentile=self.average_percentile,in_bin_threshold=self.in_bin_threshold,ex_bin_threshold=self.ex_bin_threshold)
+        _,classification, bin_classes = stimclass.average_sdf_isi_functions_classification(self,bin_width=self.bin_width,percentile=self.average_percentile,in_bin_threshold=self.in_bin_threshold,ex_bin_threshold=self.ex_bin_threshold)
         self.neural_response = classification
         np.savetxt(self.cell_dir+"/avg_bin_results.txt",np.asarray(bin_classes),delimiter="\t",newline="\n",fmt="%d",header="Avg Class result for each bin.") # Save the classification of each bin as a file
         self.neural_response_val = self.class_dict[classification]

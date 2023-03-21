@@ -45,8 +45,8 @@ class spike_train:
         self.bin_width = bin_width
         self.bin_edges = np.arange(0,self.time+self.bin_width,self.bin_width)
         self.spikes = spikes
-        self.first_spike = self.spikes[0] if len(self.spikes) > 0 else -1
-        self.last_spike = self.spikes[-1] if len(self.spikes) > 0 else -1
+        self.first_spike = self.spikes[0] if len(self.spikes) > 0 else self.time
+        self.last_spike = self.spikes[-1] if len(self.spikes) > 0 else self.time
         self.cv = calc_cv(self.spikes)
         self.freq = freq(self.spikes,self.time)
         self.avg_isi = np.mean(np.diff(self.spikes)) if len(self.spikes) > 1 else 0
@@ -70,9 +70,7 @@ class spike_train:
             curr_bin.save_data()
             bins.append(curr_bin)
         self.bins = bins
-        fig, ax = plt.subplots(2,1,figsize=(8,6),dpi=300)
-        #ax[0].plot(np.arange(1,len(self.bins)+1,1),[b.freq for b in self.bins],marker="o",color="blue")
-        #ax[1].plot(np.arange(1,len(self.bins)+1,1),[b.cv for b in self.bins],marker="o",color="blue")
+        _, ax = plt.subplots(2,1,figsize=(8,6),dpi=300)
         ax[0].plot(self.bin_edges[:-1],[b.freq for b in self.bins],marker="o",color="blue")
         ax[1].plot(self.bin_edges[:-1],[b.cv for b in self.bins],marker="o",color="blue")
         ax[1].set_ylabel("Bin CV"); ax[0].set_ylabel("Bin Firing Rate (Hz)");
@@ -113,7 +111,7 @@ class spike_train:
                     f.write(f"{key}:\t{self.__dict__[key]}\n")
 
     def plot_fcns(self):
-        fig, axe = plt.subplots(2,1,figsize=(8,6),dpi=300)
+        _, axe = plt.subplots(2,1,figsize=(8,6),dpi=300)
         axe[0].plot(self.t,self.sdf,color="blue")
         axe[1].plot(self.t,self.isif,color="blue")
         axe[0].scatter(self.spikes,np.zeros(len(self.spikes)),marker="|",color="k")
