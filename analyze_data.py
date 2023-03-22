@@ -99,7 +99,9 @@ if __name__ == '__main__':
         for group in groups: # Iterate through all processed groups
             for neuron_dir in os.listdir(f"{save_direc}/{group}"): # Find all the neuron dictories to report
                 if "Neuron" in neuron_dir: # Confirm directory is a Neuron directory
-                    neuron = pickle.load(open(f"{save_direc}/{group}/{neuron_dir}/neuron.obj","rb")) # Read in the neuron object
+                    neuralFile =open(f"{save_direc}/{group}/{neuron_dir}/neuron.obj","rb") # Read in the neuron objectf file
+                    neuron = pickle.load(neuralFile) # Load neuron object to python
+                    neuralFile.close() # Close the file
                     neurons.append(neuron.meta_data) # Report the metadata of the neuron for the CSV list
         df = pd.DataFrame(neurons) # Save all the neurons to a pandas DataFrame
-        df.to_csv(f"{save_direc}/all_data.csv") # Create CSV out of data frame and save in save directory
+        df.to_csv(f"{save_direc}/all_data.csv") # Create CSV out of data frame and save CSV
