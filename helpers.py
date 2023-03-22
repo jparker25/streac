@@ -8,38 +8,46 @@
 import os
 
 def check_direc(direc):
-    '''
-    Simple function to create directory if it does not exist.
-    '''
-    if not os.path.exists(direc):
-        os.mkdir(direc)
-    return direc
+    """
+    Function to check if directory exists, if not, create directory.
+
+    :param direc: (string) path to directory to make
+    :return: returns string of directory name
+    """
+    if not os.path.exists(direc): # Check if directory exists
+        os.mkdir(direc) # Create directory
+    return direc # Return directory as string
 
 def run_cmd(str):
-    '''
-    Runs str from the command line.
-    '''
-    print("Running cmd:")
-    print(str)
-    os.system(str)
-    print()
+    """
+    Runs input from the command line. Prints out command
+
+    :param str: string input to be passed to command line/terminal for execution.
+    """
+    print("Running cmd:") 
+    print(str) # Print string command to execute
+    os.system(str) # Execute command
+    print() # Add a linebreak after execution
 
 def makeNice(axes):
-    if type(axes) == list:
-        for axe in axes:
-            for i in ['left','right','top','bottom']:
-                if i != 'left' and i != 'bottom':
-                    axe.spines[i].set_visible(False)
-                    axe.tick_params('both', width=0,labelsize=8)
-                else:
-                    axe.spines[i].set_linewidth(3)
-                    axe.tick_params('both', width=0,labelsize=8)
-    else:
-        for i in ['left','right','top','bottom']:
-                if i != 'left' and i != 'bottom':
-                    axes.spines[i].set_visible(False)
-                    axes.tick_params('both', width=0,labelsize=8)
-                else:
-                    axes.spines[i].set_linewidth(3)
-                    axes.tick_params('both', width=0,labelsize=8)
+    """
+    Reads in and clean figure axes.
+
+    :param axes: list of axes or single axis of a figure.
+    """
+    if type(axes) == list: # Check if input is a list
+        for axe in axes: # Iterate through list of axes 
+            for i in ['left','right','top','bottom']: # Iterate through spines 
+                if i != 'left' and i != 'bottom': # Removes top and right spine from axis
+                    axe.spines[i].set_visible(False) 
+                else: # Left and bottom axis
+                    axe.spines[i].set_linewidth(3) # Increase spine width
+                    axe.tick_params('both', width=0,labelsize=8) # Remove tick marks and set label size
+    else: # If single axis
+        for i in ['left','right','top','bottom']:  # Iterate through spines 
+                if i != 'left' and i != 'bottom': # Removes top and right spine from axis
+                    axe.spines[i].set_visible(False) 
+                else: # Left and bottom axis
+                    axe.spines[i].set_linewidth(3) # Increase spine width
+                    axe.tick_params('both', width=0,labelsize=8) # Remove tick marks and set label size
         
