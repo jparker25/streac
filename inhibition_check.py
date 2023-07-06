@@ -41,6 +41,8 @@ def isi_function(spikes,t,avg=250):
     :keyword param avg: Window of moving average, default 250.
     :return isif: Moving average of interpolated ISI function.
     """
+    if len(spikes) <3:
+        return np.zeros(t.shape[0])
     isis = np.diff(spikes) # Create ISIs for spike train
     tEnd = t[-1] - spikes[-1] # Find the time from the last spike to the end of train
     interp = np.interp(t,spikes[:-1],np.diff(spikes)) # Degree 1 interpolation onto 't' for spike times and ISIs
@@ -60,8 +62,8 @@ def avg_inhibition_check(neuron,baselines,stimuli,percentile=99,bin_width=0.5):
     fig,ax = plt.subplots(2,1,figsize=(8,6),dpi=300) # Create figure that will have 2 rows and 1 column
     results = np.zeros(len(stimuli[0].bin_edges)-1) # Create empty array that will store the classifications of each bin
 
-    isi_bls = np.asarray([baseline.isif for baseline in baselines if baseline.spikes.size > 1])
-    isi_stims = np.asarray([stimulus.isif for stimulus in stimuli if stimulus.spikes.size > 1])
+    isi_bls = np.asarray([baseline.isif for baseline in baselines])
+    isi_stims = np.asarray([stimulus.isif for stimulus in stimuli])
     avg_isi_stim = np.mean(isi_stims,axis=0)
 
     bl_areas = []
