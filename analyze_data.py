@@ -26,6 +26,10 @@ if __name__ == '__main__':
     parser.add_argument('-apct','--average_percentile',nargs=1,default=[90],type=float,help="Percentile to look for in average baseline histogram.")
     parser.add_argument('-ibt','--inhibit_bin_threshold',nargs=1,default=[3],type=int,help="Number of bins for inhibtion threshold.")
     parser.add_argument('-ebt','--excite_bin_threshold',nargs=1,default=[3],type=int,help="Number of bins for excitation threshold.")
+    parser.add_argument('-cibt','--consecutive_inhibit_bin_threshold',nargs=1,default=[2],type=int,help="Number of bins for inhibtion threshold.")
+    parser.add_argument('-cebt','--consecutive_excite_bin_threshold',nargs=1,default=[2],type=int,help="Number of bins for excitation threshold.")
+    parser.add_argument('-NoShuff','--no_average_shuffling',action="store_true",help="If given then no average shuffling.")
+    parser.add_argument('-ISIFSDF','--isif_vs_sdf',type=float,nargs=1,default=[25],help="Any baseline FR below this, all trials use ISIF for inhibition.")
     
     parser.add_argument('-mu','--mu',type=int,nargs=1,default=[250],help="Number of points for moving average in ISIF. Not implemented.")
     parser.add_argument('-sig','--sigma',type=float,nargs=1,default=[25/1000],help="Sigma (bandwidth) in SDF. Not implemented")
@@ -45,6 +49,8 @@ if __name__ == '__main__':
                     if key == "baseline" or key =="stimulus": # Read in 'baseline' and 'stimulus' as lists
                         vals = val.split(",") # Split by comma
                         param_dict[key] = [eval(x) for x in vals] # Create numeric list
+                    elif key == "average_shuffling":
+                        param_dict[key] = val
                     else: # Read in all other parametes
                         param_dict[key] = eval(val) # Evaluate the provided number
         print(param_dict) # Print the parameter dictionary generated from the file
@@ -55,10 +61,20 @@ if __name__ == '__main__':
         args.average_percentile = [param_dict["average_percentile"]] # Set average_percentile from file
         args.inhibit_bin_threshold = [param_dict["inhibit_bin_threshold"]] # Set IBT from file
         args.excite_bin_threshold = [param_dict["excite_bin_threshold"]] # Set EBT from file
-        #args.mu = [param_dict["mu"]] # not implemented yet # Set mu from file
-        #args.sigma = [param_dict["sigma"]] # not implemented yet # Set sigma from file
+        args.consecutive_inhibit_bin_threshold = [param_dict["consecutive_inhibit_bin_threshold"]] # Set IBT from file
+        args.consecutive_excite_bin_threshold = [param_dict["consecutive_excite_bin_threshold"]] # Set EBT from file
+        args.mu = [param_dict["mu"]] # not implemented yet # Set mu from file
+        args.sigma = [param_dict["sigma"]] # not implemented yet # Set sigma from file
+        args.no_average_shuffling = param_dict["average_shuffling"] == "No"
+        args.isif_vs_sdf = [param_dict["isif_sdf_threshold"]]
 
     print(args) # Print arguments
+
+    if args.inhibit_bin_threshold < args.consecutive_inhibit_bin_threshold:
+        args.inhibit_bin_threshold = 0
+    if args.excite_bin_threshold < args.consecutive_excite_bin_threshold:
+        args.excite_bin_threshold = 0
+
 
     save_direc = check_direc(args.save_direc) # Create/check the save directory
 
@@ -67,21 +83,21 @@ if __name__ == '__main__':
     for group in groups: # Iterate through each group in data directory and set target results directory in the save_directory
         check_direc(f"{save_direc}/{group}")
     
-    '''
+    
     # Save the parameters that were run with the results directory
     with open(f"{save_direc}/parameters.txt",'w') as file: # Create new parameter file
         for key in sorted(args.__dict__): # Save each paramter to file
             file.write(f"{key}:\t{args.__dict__[key]}\n")
-    '''
+    
 
     if args.generate_data: # If flag is given, generate the trial data
         for group in groups: # Iterate through groups in data directory and analyze trials
             print(f"Started analyzing {group}...") # Print the group that is being processed
             cells = [f.path.split("/")[-1] for f in os.scandir(f"{args.data_direc}/{group}") if f.is_dir()] # Read in the cells to be processed
             pool = multiprocessing.Pool(multiprocessing.cpu_count()-2) # Create a worker pool based on CPUs on machine
-            neurons = pnd.get_trial_data_parallel(args.data_direc,group,cells,save_direc) # Gather all the neurons to be processed
+            neurons = pnd.get_trial_data_parallel(args.data_direc,group,cells,save_direc,False if args.no_average_shuffling else True,args.isif_vs_sdf[0],args.mu[0],args.sigma[0]) # Gather all the neurons to be processed
             # Create a list to parallelized for trial analysis
-            parallel = [(neuron,args.bin_width[0],args.trial_percentile[0],args.average_percentile[0],args.baseline[0],args.baseline[1],args.stimulus[0],args.stimulus[1],args.inhibit_bin_threshold[0],args.excite_bin_threshold[0]) for neuron in neurons] 
+            parallel = [(neuron,args.bin_width[0],args.trial_percentile[0],args.average_percentile[0],args.baseline[0],args.baseline[1],args.stimulus[0],args.stimulus[1],args.inhibit_bin_threshold[0],args.excite_bin_threshold[0],args.consecutive_inhibit_bin_threshold[0],args.consecutive_excite_bin_threshold[0]) for neuron in neurons] 
             pool.starmap(pnd.analyze_trial_parallel,parallel) # Analyze the trials of each cell, in parallel
             pool.close() # Close the worker pool
             pool.join() # Bring the workers back together

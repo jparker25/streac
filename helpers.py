@@ -14,8 +14,7 @@ def check_direc(direc):
     :param direc: (string) path to directory to make
     :return: returns string of directory name
     """
-    if not os.path.exists(direc): # Check if directory exists
-        os.mkdir(direc) # Create directory
+    os.system(f"mkdir -p {direc}")
     return direc # Return directory as string
 
 def run_cmd(str):
@@ -46,8 +45,8 @@ def makeNice(axes):
     else: # If single axis
         for i in ['left','right','top','bottom']:  # Iterate through spines 
                 if i != 'left' and i != 'bottom': # Removes top and right spine from axis
-                    axe.spines[i].set_visible(False) 
+                    axes.spines[i].set_visible(False) 
                 else: # Left and bottom axis
-                    axe.spines[i].set_linewidth(3) # Increase spine width
-                    axe.tick_params('both', width=0,labelsize=8) # Remove tick marks and set label size
+                    axes.spines[i].set_linewidth(3) # Increase spine width
+                    axes.tick_params('both', width=0,labelsize=8) # Remove tick marks and set label size
         

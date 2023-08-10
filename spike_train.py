@@ -39,7 +39,7 @@ def freq(spike_train,time):
     return len(spike_train)/time # firing rate is number of spikes divided by total time recorded
 
 class spike_train:
-    def __init__(self,spikes,time,bin_width,type):
+    def __init__(self,spikes,time,bin_width,type,mu,sigma):
         """
         Initialize spike train object given array of spike times, and recording time.
 
@@ -59,12 +59,12 @@ class spike_train:
         self.freq = freq(self.spikes,self.time) # Calc firing rate and set attribute
         self.avg_isi = np.mean(np.diff(self.spikes)) if len(self.spikes) > 1 else 0 # Calc average ISI and set attribute
         self.t = np.linspace(0,self.time,int(self.time*1000)) # Create time array as attribute
-        self.sdf = exch.kernel(self.spikes,self.t) if len(self.spikes) > 1 else np.zeros(int(self.time*1000)) # Generate SDF
+        self.sdf = exch.kernel(self.spikes,self.t,bandwidth=sigma) if len(self.spikes) > 1 else np.zeros(int(self.time*1000)) # Generate SDF
         if len(self.spikes) < 2: # Empty ISIF if less than 2 spikes
             #self.isif = np.zeros(1)
             self.isif = np.zeros(self.t.shape[0]) # Empty array for ISIF
         else: # Generate ISIF if more than 1 spike
-            self.isif = inch.isi_function(self.spikes,self.t)
+            self.isif = inch.isi_function(self.spikes,self.t,avg=mu)
 
 
     def get_bins(self):

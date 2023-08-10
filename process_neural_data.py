@@ -11,7 +11,7 @@ import os, pickle
 from neuron import neural_cell as nc
 from helpers import *
 
-def get_trial_data_parallel(data_direc,group,cells,save_direc):
+def get_trial_data_parallel(data_direc,group,cells,save_direc,average_shuffling,isif_sdf_threshold,mu,sigma):
     """
     Function that gathers neurons for parallel trial analysis
 
@@ -19,18 +19,23 @@ def get_trial_data_parallel(data_direc,group,cells,save_direc):
     :param group: The group to start to analyze (subdirectory in data_direc)
     :param cells: list of diectories corresponding to neurons in group
     :param save_direc: Destination of where to save the processed neurons
+    :param average_shuffling: Boolean to determine if to use shuffling with average resposne
+    :param isif_sdf_threshold: Value to determine cutoff with ISIF or SDF with inhibition
+    :param mu: Number of points for ISIF for moving mean
+    :param sigma: Bandwidth of SDF function
+
     :return neurons: list of neuron objects genereated by information in data_direc
     """
     direc = f"{data_direc}/{group}" # Create temp variable of the data directory and group
     out_dir = check_direc(f"{save_direc}/{group}") # Create directory for processed neurons
     neurons = [] # Empty list to be filled with all neuron objects
     for cell_dir in cells: # Iterate through all cell directories in cells
-        neuron = nc(direc,group,cell_dir) # Create a neuron object
+        neuron = nc(direc,group,cell_dir,average_shuffling,isif_sdf_threshold,mu,sigma) # Create a neuron object
         neuron.set_save_direc(out_dir) # Set the save directory for the neuron object
         neurons.append(neuron) # Add the neuron object to list of neurons
     return neurons # Return list of neurons
 
-def analyze_trial_parallel(neuron,bin_width,trial_percentile,average_percentile,baseline_start,baseline_length,trial_start,trial_length,in_bin_threshold,ex_bin_threshold):
+def analyze_trial_parallel(neuron,bin_width,trial_percentile,average_percentile,baseline_start,baseline_length,trial_start,trial_length,in_bin_threshold,ex_bin_threshold,con_in_bin_threshold,con_ex_bin_threshold):
     """
     Analyzes single neuron trials.
 
@@ -44,10 +49,12 @@ def analyze_trial_parallel(neuron,bin_width,trial_percentile,average_percentile,
     :param trial_length: Length of trial.
     :param in_bin_threshold: Integer of bins that consider a trial inhibited.
     :param ex_bin_threshold: Integer of bins that consider a trial excited.
+    :param con_in_bin_threshold: Integer of consecutive bins that consider a trial inhibited.
+    :param con_ex_bin_threshold: Integer of consecutive bins that consider a trial excited.
     """
     neuron.gather_data() # Gather all data of neuron from data_directory
     # Generate and analyze trial data using input parameters
-    neuron.gather_trials(baseline_start,baseline_length,trial_start,trial_length,bin_width,trial_percentile,average_percentile,in_bin_threshold,ex_bin_threshold)
+    neuron.gather_trials(baseline_start,baseline_length,trial_start,trial_length,bin_width,trial_percentile,average_percentile,in_bin_threshold,ex_bin_threshold,con_in_bin_threshold,con_ex_bin_threshold)
     neuron.gather_pre_post() # Generate and analyze pre/post periods 
     neuron.save_data() # Save the updated neuron object
 
