@@ -152,6 +152,7 @@ class neural_cell:
         :param con_in_bin_threshold: Integer of consecutive bins that consider a trial inhibited.
         :param con_ex_bin_threshold: Integer of consecutive bins that consider a trial excited.
         """
+        np.random.seed(44)
         self.bin_width = bin_width # Set the attribute of bin_width
         self.classifications = [] # Set an empty array to hold trial classifications
         self.classification_vals = [] # Set an empty array to hold numerical trial classifications
@@ -213,7 +214,7 @@ class neural_cell:
         # Iterate throuh all trials
         for tl in range(1,self.trials+1):
             # Determine the classification of the trial
-            _,classification, bin_classes = stimclass.trial_sdf_isi_functions_classification(self,baseline_trials[tl-1], stim_trials[tl-1],trial_direcs[tl-1],self.isif_inhibition,bin_width=self.bin_width,percentile=self.trial_percentile,in_bin_threshold=self.in_bin_threshold,ex_bin_threshold=self.ex_bin_threshold,con_in_bin_threshold=self.con_in_bin_threshold,con_ex_bin_threshold=self.con_ex_bin_threshold)
+            _,classification, bin_classes = stimclass.trial_sdf_isi_functions_classification(self,baseline_trials[tl-1], stim_trials[tl-1],trial_direcs[tl-1],self.isif_inhibition,percentile=self.trial_percentile,in_bin_threshold=self.in_bin_threshold,ex_bin_threshold=self.ex_bin_threshold,con_in_bin_threshold=self.con_in_bin_threshold,con_ex_bin_threshold=self.con_ex_bin_threshold)
             self.classifications.append(classification) # Append the trial classification to the classificaiton attribute array
             np.savetxt(trial_direcs[tl-1]+"/bin_results.txt",np.asarray(bin_classes),delimiter="\t",newline="\n",fmt="%d",header="Class result for each bin.") # Save the classification of each bin as a file
             self.plot_trial(tl,trial_direc,baseline_trials[tl-1],stim_trials[tl-1],bin_classes,classification) # Call plot trial to visualize the classification by bin
@@ -254,6 +255,7 @@ class neural_cell:
         Identify the average response of the neuron.
         """
         # Run the average response classifciation algorithm.
+        np.random.seed(44)
         _,classification, bin_classes = stimclass.average_sdf_isi_functions_classification(self,bin_width=self.bin_width,percentile=self.average_percentile,in_bin_threshold=self.in_bin_threshold,ex_bin_threshold=self.ex_bin_threshold,con_in_bin_threshold=self.con_in_bin_threshold,con_ex_bin_threshold=self.con_ex_bin_threshold)
         self.neural_response = classification # Set the average response as neural attribute
         np.savetxt(self.cell_dir+"/avg_bin_results.txt",np.asarray(bin_classes),delimiter="\t",newline="\n",fmt="%d",header="Avg Class result for each bin.") # Save the classification of each bin as a file

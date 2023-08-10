@@ -63,18 +63,18 @@ if __name__ == '__main__':
         args.excite_bin_threshold = [param_dict["excite_bin_threshold"]] # Set EBT from file
         args.consecutive_inhibit_bin_threshold = [param_dict["consecutive_inhibit_bin_threshold"]] # Set IBT from file
         args.consecutive_excite_bin_threshold = [param_dict["consecutive_excite_bin_threshold"]] # Set EBT from file
-        args.mu = [param_dict["mu"]] # not implemented yet # Set mu from file
-        args.sigma = [param_dict["sigma"]] # not implemented yet # Set sigma from file
-        args.no_average_shuffling = param_dict["average_shuffling"] == "No"
-        args.isif_vs_sdf = [param_dict["isif_sdf_threshold"]]
+        args.mu = [param_dict["mu"]] # Set mu from file
+        args.sigma = [param_dict["sigma"]] # Set sigma from file
+        args.no_average_shuffling = param_dict["average_shuffling"] == "No" # Set no_average_shuffling
+        args.isif_vs_sdf = [param_dict["isif_sdf_threshold"]] # Set isif_sdf_threshold
 
     print(args) # Print arguments
 
+    # Set IBT and EBT to 0 if cIBT and cEBT are larger, respectively
     if args.inhibit_bin_threshold < args.consecutive_inhibit_bin_threshold:
         args.inhibit_bin_threshold = 0
     if args.excite_bin_threshold < args.consecutive_excite_bin_threshold:
         args.excite_bin_threshold = 0
-
 
     save_direc = check_direc(args.save_direc) # Create/check the save directory
 
@@ -83,13 +83,11 @@ if __name__ == '__main__':
     for group in groups: # Iterate through each group in data directory and set target results directory in the save_directory
         check_direc(f"{save_direc}/{group}")
     
-    
     # Save the parameters that were run with the results directory
     with open(f"{save_direc}/parameters.txt",'w') as file: # Create new parameter file
         for key in sorted(args.__dict__): # Save each paramter to file
             file.write(f"{key}:\t{args.__dict__[key]}\n")
     
-
     if args.generate_data: # If flag is given, generate the trial data
         for group in groups: # Iterate through groups in data directory and analyze trials
             print(f"Started analyzing {group}...") # Print the group that is being processed
