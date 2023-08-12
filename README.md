@@ -69,4 +69,108 @@ options:
 
 ```
 
-We will now go through all of these possible flags. Once our paper on the method is published, we will include the link to peer-reviewed paper.
+We will now go through all of these possible flags. The order is focused on importance rather than the order listed above. Once our paper on the method is published, we will include the link to the peer-reviewed paper for more information.
+
+
+### --data_direc (required)
+Directory for where the spike train data is stored, short hand, `-d`. Spike train data should be subdivied into directories pertaining to each group. For example, if there are four groups that exist in `path_to_data_direc`:
+```
+path_to_data_direc
+├── Group_1
+├── Group_2
+├── Group 3
+└── Group 4
+```
+The group names are arbitrary and can be user defined. From here, each group should contained a list of `N` subdirectories, `Neuron_0001` through `Neuron_N` (e.g. `N=1200` then the last subdirectory would be `Neuron_1200`). Let's assume `Group_1` has three neurons, and within each subdirectory will be three text files, as shown below.
+
+```
+path_to_data_direc
+├── Group_1
+    ├── Neuron_0001
+    │   ├── light_on.txt
+    │   ├── meta_data.txt
+    │   └── spikes.txt
+    ├── Neuron_0002
+    │   ├── light_on.txt
+    │   ├── meta_data.txt
+    │   └── spikes.txt
+    └── Neuron_0003
+        ├── light_on.txt
+        ├── meta_data.txt
+        └── spikes.txt
+```
+The `light_on.txt` file will be a list of times corresponding to the start of an experiment. For example, in optogenetic studies, these times would signfity when the light comes on, hence the name. The `spikes.txt` file contains a list of all spike times before, during and after stimulation all stimulation times for that particular neuron. Lastly, `meta_data.txt` contains quantites that may be of interest for the analys that are delimited by a `:`, see the example file below that contain keyword data pertaining to that particular neuron:
+```
+Mouse#:	3
+hemisphere:	right
+distance:	1.0
+mouse:	experimental mice
+cell_num:	1
+channel:	10
+```
+Note that none of the above keywords are necessary and users can define their own keywords. 
+
+### --save_direc (required)
+Path to the directory that will contain the results of the STReaC toolbox. This should a separate directory than what is provided to the `--data_direc` flag.
+
+### --generate_data (optional)
+Flag to indicate that the toolbox should determine all trial responses for each neuron. 
+
+### --average_response (optional)
+Flag to indicate that the toolbox should determine all average responses of each neuron. This assumes trials responses have been determined already via the `--generate_data` flag.
+
+### --pandas (optional)
+Flag to provide if the toolbox should output a CSV in the directory specified by `--save_direc` containing a summary of results. This is strongly advised and can be used by a `pandas` data frame (hence the name) for further analysis in Python.
+
+### --baseline (optional, default `[10,10]`)
+Positive integers, first value read in as a negative number, corresponding to when to start the baseline time and when to end the basline time, relative to each trial's start time as indicated by `light_on.txt`. For example if a trial's light on time is at 22.5 s and `--baseline [10,10]` is the flag provided, then that baseline starts at 12.5s and ends at 22.5s. Figures will show this period as negative time.
+
+
+### --stimulus (optional, default `[0,10]`)
+Positive integers corresponding to when to start the response time and when to end the response time, relative to each trial's start time as indicated by `light_on.txt`. For example if a trial's light on time is at 22.5 s and `--stimulus [0,10]` is the flag provided, then that response starts at 22.5s and ends at 32.5s. Figures will show this period as positive time.
+
+### --bin_width  (optional, default `[0.5]`)
+Width of bins to use when partitioning baseline and response periods with ISIF/SDF analysis.
+
+### --trial_percentile (optional, default `[99]`)
+Percentile used when finding the threshold of baseline bin areas to compare with ISIF/SDF bin areas in determining the trial neural response.
+
+### --average_percentile (optional, default `[90]`)
+Percentile used when finding the threshold of baseline bin areas to compare with ISIF/SDF bin areas in determining the average neural response.
+
+### --inhibit_bin_threshold (optional, default `[3]`)
+Number of inhibited bins required to be considered an inhibitory response. Must be greater than 0 unless consecutive inhibited bins are given, then possible to be 0.
+### --excite_bin_threshold  (optional, default `[3]`)
+Number of excited bins required to be considered an excitatory response. Must be greater than 0 unless consecutive excited bins are given, then possible to be 0.
+
+### --consecutive_inhibit_bin_threshold (optional, default `[2]`)
+Integer number of consecutive inhibited bins required to be considered an inhibitory response. If this value is below the inhibited bin threshold, a valid inhibitory response (partial inhibition, adapting inhibition, biphasic IE, biphasic EI) can be comprised of consecutive or non-consecutive bins. If this value is equal or above the inhibited bin threshold, then only this number of consecutive inhibited bins determine a valid inhibitory response.
+### --consecutive_excite_bin_threshold (optional, default `[2]`)
+Integer number of consecutive excited bins required to be considered an excitatory response. If this value is below the excited bin threshold, a valid excitatory response (excitation, biphasic IE, biphasic EI) can be comprised of consecutive or non-consecutive bins. If this value is equal or above the excited bin threshold, then only this number of consecutive excited bins determine a valid excitatory response.
+### --no_average_shuffling (optional, default `False`)
+During each trial analysis, spike times are shuffled to amplify the number of baseline samples. During the average response analysis, all of the trial data, including shuffled baseline samples, are used in determing periods of excitation and inhibition. However if this flag is provided, then the addtional shuffled samples are excluded.
+### --isif_vs_sdf (optional, default `[25]`)
+Threshold to determine whether to use the ISIF or SDF for detecting inhibition. For a neuron's set of trials, if any average baseline firing rate is below this threshold then the ISIF will be used for all detection of inhibition. If not, then the SDF will be used for all detection of inhibition.
+### --mu (optional, default `[250]`)
+Number of points to form a moving mean of the interspike interval function (ISIF).
+### --sigma (optional, default `[25/1000]`)
+Bandwidth used in construction of the spike density function (SDF).
+### --param_file (optional)
+Parameter file for above optional flags. Ideal for running multiple runs or tracking what flags were provided to the toolbox. Example is given below, from the `parameters.txt` file included in this repository.
+```
+# default parameter file
+baseline:10,10
+stimulus:0,10
+bin_width:0.5
+trial_percentile:99
+average_percentile:90
+inhibit_bin_threshold:3
+excite_bin_threshold:3
+consecutive_inhibit_bin_threshold:2
+consecutive_excite_bin_threshold:2
+mu:250
+sigma:25/1000
+isif_sdf_threshold:24.25
+average_shuffling:Yes
+```
+                        
