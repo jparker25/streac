@@ -7,7 +7,7 @@ Originally, this code was developed for analyzing neural responses to optogeneti
 This toolbox is currently under review and being actively managed, this README is still a work in progress. For further questions that are not addresed or other necessary clarification please contact the owner of this repository.
 
 <details> 
-<summary>Dependencies</summary>
+<summary>Dependencies</summary><blockquote>
 
 All code was built using Python 3.11. We strongly advise using a virtual environment when running this code. Please see [https://docs.python.org/3/library/venv.html](https://docs.python.org/3/library/venv.html) on how to set up and activate virtual environment on your machine.
 
@@ -16,10 +16,11 @@ Once set up, to install the necessary Python modules please run:
 `$ pip install -r requirements.txt`
 
 You are now ready to run the code!
+</blockquote>
 </details>
 
 <details>
-<summary>Running the STReaC program</summary>
+<summary>Running the STReaC program</summary><blockquote>
 
 One line is sufficient to run the program, assuming the proper flags and directory paths are supplied. To see a print out of all the options run:
 
@@ -247,5 +248,6 @@ isif_sdf_threshold:24.25
 average_shuffling:Yes
 ```
 </blockquote>
-</details>                        
+</details>  
+</blockquote>                      
 </details>
