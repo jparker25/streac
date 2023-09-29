@@ -251,3 +251,22 @@ average_shuffling:Yes
 </details>  
 </blockquote>                      
 </details>
+
+<details> 
+<summary>Common Issues (will add more over time)</summary><blockquote>
+
+1. Issues for data not found:
+>- Be sure to provide absolute paths when running `analyze_data.py`
+>- Each neuron directory should be capitalized (e.g. `Neuron_0015`)
+>- Files within each neuron directory should be as specified above (e.g. `light_on.txt`, `spikes.txt`, `meta_data.txt`)
+
+2. Paramater not being read in correctly:
+  >- Check path being provided.
+  >- Check that parameter names are exactly as given in the example above.
+3. Dependencies/python libraries not found:
+  >- Make sure you are in the proper python virtual environment. May need to repeat steps seen in `Dependencies` section above.
+4. Average response not being generated with `-ar` or `--average_response` provided:
+ >- Analysis of the average response is dependent on trial responses having been generated. Please run the data set with the `-g` or `--generate_data` with the average response flags or before.
+
+</blockquote>
+</details>
