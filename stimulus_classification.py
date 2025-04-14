@@ -205,26 +205,27 @@ def average_sdf_isi_functions_classification(neuron,bin_width=0.5,percentile=90,
         # Store bin results for each trials
         trial_results.append(np.loadtxt(f"{neuron.cell_dir}/trial_{trial:02d}/bin_results.txt"))
     cmap = ["gray","cyan","red","green"] # Color map to code for classification of bin (NE, IN, EX, both)
-    fig,axe = plt.subplots(1,1,figsize=(12,6),dpi=300) # Create a new figure
-    for trial in range(neuron.trials): # Iterate thorugh all trials
-        axe.scatter(baselines[trial].spikes-baselines[trial].time,np.ones(len(baselines[trial].spikes))*(trial+1),marker="|",color="k",s=200) # Plot the baseline raster
-        axe.scatter(stimuli[trial].spikes,np.ones(len(stimuli[trial].spikes))*(trial+1),marker="|",color="blue",s=200) # Plot the stimulus raster
-        for i in range(len(stimuli[trial].bin_edges)-1): # Iterate through each bin and color code by response
-            axe.add_patch(Rectangle(xy=(np.mean([stimuli[trial].bin_edges[i],stimuli[trial].bin_edges[i+1]])-bin_width/4,trial+0.5-bin_width/4),width=bin_width/2,height=bin_width/2,color=cmap[int(trial_results[trial][i])],fill=True))
-    axe.hlines(neuron.trials+0.5,0,stimuli[0].time,color='k',linewidth=5,label="Light") # horizontal line that signifies light on period
-    axe.vlines(stimuli[0].bin_edges,0,neuron.trials+1,color="k",linestyle="dashed",alpha=0.25,linewidth=0.5) # Draw vertical lines for bin edges on the SDF stimulus plot
-    axe.vlines(baselines[0].bin_edges-baselines[0].time,0,neuron.trials+1,color="k",linestyle="dashed",alpha=0.25,linewidth=0.5) # Draw vertical lines for bin edges on the SDF baselien plot
-    axe.set_ylim([0,neuron.trials+0.75]) # Set ylims
-    axe.set_xlim([-neuron.baseline_length,neuron.trial_length]) # Set xlims
-    axe.set_yticks([k for k in range(1,neuron.trials+1)]) # Set yticks
-    axe.spines['right'].set_visible(False) # Remove spines
-    axe.spines['top'].set_visible(False) # Remove spines
-    plt.suptitle("All Baseline (black) and Trials (blue)") # Set title
-    fig.text(0.06, 0.5, 'Trials', ha='center', va='center', rotation='vertical') # Label figure
-    fig.text(0.5, 0.04, 't', ha='center', va='center')
-    makeNice(axe) # Clean up figure
-    plt.savefig(f"{neuron.cell_dir}/all_trial_spike_trains.pdf") # Save the figure in trial direc
-    plt.close() # Close the figure
+    if neuron.generate_plots:
+        fig,axe = plt.subplots(1,1,figsize=(12,6),dpi=300) # Create a new figure
+        for trial in range(neuron.trials): # Iterate thorugh all trials
+            axe.scatter(baselines[trial].spikes-baselines[trial].time,np.ones(len(baselines[trial].spikes))*(trial+1),marker="|",color="k",s=200) # Plot the baseline raster
+            axe.scatter(stimuli[trial].spikes,np.ones(len(stimuli[trial].spikes))*(trial+1),marker="|",color="blue",s=200) # Plot the stimulus raster
+            for i in range(len(stimuli[trial].bin_edges)-1): # Iterate through each bin and color code by response
+                axe.add_patch(Rectangle(xy=(np.mean([stimuli[trial].bin_edges[i],stimuli[trial].bin_edges[i+1]])-bin_width/4,trial+0.5-bin_width/4),width=bin_width/2,height=bin_width/2,color=cmap[int(trial_results[trial][i])],fill=True))
+        axe.hlines(neuron.trials+0.5,0,stimuli[0].time,color='k',linewidth=5,label="Light") # horizontal line that signifies light on period
+        axe.vlines(stimuli[0].bin_edges,0,neuron.trials+1,color="k",linestyle="dashed",alpha=0.25,linewidth=0.5) # Draw vertical lines for bin edges on the SDF stimulus plot
+        axe.vlines(baselines[0].bin_edges-baselines[0].time,0,neuron.trials+1,color="k",linestyle="dashed",alpha=0.25,linewidth=0.5) # Draw vertical lines for bin edges on the SDF baselien plot
+        axe.set_ylim([0,neuron.trials+0.75]) # Set ylims
+        axe.set_xlim([-neuron.baseline_length,neuron.trial_length]) # Set xlims
+        axe.set_yticks([k for k in range(1,neuron.trials+1)]) # Set yticks
+        axe.spines['right'].set_visible(False) # Remove spines
+        axe.spines['top'].set_visible(False) # Remove spines
+        plt.suptitle("All Baseline (black) and Trials (blue)") # Set title
+        fig.text(0.06, 0.5, 'Trials', ha='center', va='center', rotation='vertical') # Label figure
+        fig.text(0.5, 0.04, 't', ha='center', va='center')
+        makeNice(axe) # Clean up figure
+        plt.savefig(f"{neuron.cell_dir}/all_trial_spike_trains.pdf") # Save the figure in trial direc
+        plt.close() # Close the figure
 
     # Only for low rate stimulus neurons
     if (np.mean([len(stimulus.spikes) for stimulus in stimuli]) <= 5) and (np.mean([len(baseline.spikes) for baseline in baselines]) <= 5): # No effect if average spikes below 5 in baseline and stimulus

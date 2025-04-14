@@ -11,7 +11,18 @@ import os, pickle
 from neuron import neural_cell as nc
 from helpers import *
 
-def get_trial_data_parallel(data_direc,group,cells,save_direc,average_shuffling,isif_sdf_threshold,mu,sigma):
+
+def get_trial_data_parallel(
+    data_direc,
+    group,
+    cells,
+    save_direc,
+    average_shuffling,
+    isif_sdf_threshold,
+    mu,
+    sigma,
+    generate_plots,
+):
     """
     Function that gathers neurons for parallel trial analysis
 
@@ -23,19 +34,47 @@ def get_trial_data_parallel(data_direc,group,cells,save_direc,average_shuffling,
     :param isif_sdf_threshold: Value to determine cutoff with ISIF or SDF with inhibition
     :param mu: Number of points for ISIF for moving mean
     :param sigma: Bandwidth of SDF function
+    :param generate_plots: Boolean to generate plots of analysis
 
     :return neurons: list of neuron objects genereated by information in data_direc
     """
-    direc = f"{data_direc}/{group}" # Create temp variable of the data directory and group
-    out_dir = check_direc(f"{save_direc}/{group}") # Create directory for processed neurons
-    neurons = [] # Empty list to be filled with all neuron objects
-    for cell_dir in cells: # Iterate through all cell directories in cells
-        neuron = nc(direc,group,cell_dir,average_shuffling,isif_sdf_threshold,mu,sigma) # Create a neuron object
-        neuron.set_save_direc(out_dir) # Set the save directory for the neuron object
-        neurons.append(neuron) # Add the neuron object to list of neurons
-    return neurons # Return list of neurons
+    direc = (
+        f"{data_direc}/{group}"  # Create temp variable of the data directory and group
+    )
+    out_dir = check_direc(
+        f"{save_direc}/{group}"
+    )  # Create directory for processed neurons
+    neurons = []  # Empty list to be filled with all neuron objects
+    for cell_dir in cells:  # Iterate through all cell directories in cells
+        neuron = nc(
+            direc,
+            group,
+            cell_dir,
+            average_shuffling,
+            isif_sdf_threshold,
+            mu,
+            sigma,
+            generate_plots,
+        )  # Create a neuron object
+        neuron.set_save_direc(out_dir)  # Set the save directory for the neuron object
+        neurons.append(neuron)  # Add the neuron object to list of neurons
+    return neurons  # Return list of neurons
 
-def analyze_trial_parallel(neuron,bin_width,trial_percentile,average_percentile,baseline_start,baseline_length,trial_start,trial_length,in_bin_threshold,ex_bin_threshold,con_in_bin_threshold,con_ex_bin_threshold):
+
+def analyze_trial_parallel(
+    neuron,
+    bin_width,
+    trial_percentile,
+    average_percentile,
+    baseline_start,
+    baseline_length,
+    trial_start,
+    trial_length,
+    in_bin_threshold,
+    ex_bin_threshold,
+    con_in_bin_threshold,
+    con_ex_bin_threshold,
+):
     """
     Analyzes single neuron trials.
 
@@ -52,11 +91,24 @@ def analyze_trial_parallel(neuron,bin_width,trial_percentile,average_percentile,
     :param con_in_bin_threshold: Integer of consecutive bins that consider a trial inhibited.
     :param con_ex_bin_threshold: Integer of consecutive bins that consider a trial excited.
     """
-    neuron.gather_data() # Gather all data of neuron from data_directory
+    neuron.gather_data()  # Gather all data of neuron from data_directory
     # Generate and analyze trial data using input parameters
-    neuron.gather_trials(baseline_start,baseline_length,trial_start,trial_length,bin_width,trial_percentile,average_percentile,in_bin_threshold,ex_bin_threshold,con_in_bin_threshold,con_ex_bin_threshold)
-    neuron.gather_pre_post() # Generate and analyze pre/post periods 
-    neuron.save_data() # Save the updated neuron object
+    neuron.gather_trials(
+        baseline_start,
+        baseline_length,
+        trial_start,
+        trial_length,
+        bin_width,
+        trial_percentile,
+        average_percentile,
+        in_bin_threshold,
+        ex_bin_threshold,
+        con_in_bin_threshold,
+        con_ex_bin_threshold,
+    )
+    neuron.gather_pre_post()  # Generate and analyze pre/post periods
+    neuron.save_data()  # Save the updated neuron object
+
 
 def grab_analyze_avg_neurons(save_direc):
     """
@@ -65,17 +117,30 @@ def grab_analyze_avg_neurons(save_direc):
     :param save_direc: Location of where neuron objects to be processed are stored.
     :return neuron_data: List containing sublists of neuron objects pertaining to each group.
     """
-    neuron_data = [] # Empty list to be filled with sublits of objects
-    for dir in os.listdir(save_direc): # Iterate through the save_direc to gather all neuron objects
-        if dir != "comparisons" and dir != ".DS_Store" and os.path.isdir(f"{save_direc}/{dir}"): # Confirm subdirectory is a group
-            neurons = [] # For the group, create a sublist for individual neurons
-            for d in os.listdir(f"{save_direc}/{dir}"): # Iterate through directories and append nueuron object to list
-                if d[0:6] == "Neuron": # Make sure directory is neuron directory
-                    neuronFile = open(f"{save_direc}/{dir}/{d}/neuron.obj","rb") # Read in neuron object file
-                    neurons.append(pickle.load(neuronFile)) # Read in neuron object and append to neurons list
-                    neuronFile.close() # Close neuron object file
-            neuron_data.append(neurons) # Append sublist of neurons to neuron_data 
-    return neuron_data # Return neuron_data
+    neuron_data = []  # Empty list to be filled with sublits of objects
+    for dir in os.listdir(
+        save_direc
+    ):  # Iterate through the save_direc to gather all neuron objects
+        if (
+            dir != "comparisons"
+            and dir != ".DS_Store"
+            and os.path.isdir(f"{save_direc}/{dir}")
+        ):  # Confirm subdirectory is a group
+            neurons = []  # For the group, create a sublist for individual neurons
+            for d in os.listdir(
+                f"{save_direc}/{dir}"
+            ):  # Iterate through directories and append nueuron object to list
+                if d[0:6] == "Neuron":  # Make sure directory is neuron directory
+                    neuronFile = open(
+                        f"{save_direc}/{dir}/{d}/neuron.obj", "rb"
+                    )  # Read in neuron object file
+                    neurons.append(
+                        pickle.load(neuronFile)
+                    )  # Read in neuron object and append to neurons list
+                    neuronFile.close()  # Close neuron object file
+            neuron_data.append(neurons)  # Append sublist of neurons to neuron_data
+    return neuron_data  # Return neuron_data
+
 
 def analyze_avg_neurons_parallel(neuron):
     """
@@ -83,8 +148,16 @@ def analyze_avg_neurons_parallel(neuron):
 
     :param neuron: Neuron object to analyze for average response.
     """
-    print(f"Started {neuron.cell_dir}") # Print which neuron is being processed
-    neuron.class_dict = {"complete inhibition":0, "adapting inhibition": 1, "partial inhibition":2,"no effect":3,"excitation":4,"biphasic IE":5,"biphasic EI": 6} # Classification dictioary for storate
-    neuron.classify_neuron() # Classify the neuron
-    neuron.save_data() # Save all updated data to the neuron object and relevant files
-    print(f"Finished {neuron.cell_dir}") # Print the neuron is finished processing
+    print(f"Started {neuron.cell_dir}")  # Print which neuron is being processed
+    neuron.class_dict = {
+        "complete inhibition": 0,
+        "adapting inhibition": 1,
+        "partial inhibition": 2,
+        "no effect": 3,
+        "excitation": 4,
+        "biphasic IE": 5,
+        "biphasic EI": 6,
+    }  # Classification dictioary for storate
+    neuron.classify_neuron()  # Classify the neuron
+    neuron.save_data()  # Save all updated data to the neuron object and relevant files
+    print(f"Finished {neuron.cell_dir}")  # Print the neuron is finished processing
